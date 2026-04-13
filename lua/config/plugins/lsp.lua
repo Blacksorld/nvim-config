@@ -42,7 +42,7 @@ return {
             end
             require("fidget").setup({})
 
-            local ensure_installed = { "lua_ls", "gopls", "pylsp", "dockerls" }
+            local ensure_installed = { "lua_ls", "gopls", "pylsp", "dockerls", "clangd" }
             -- LSP servers setup: loop over ensure_installed
             local lspconfig = require("lspconfig")
             for _, server_name in ipairs(ensure_installed) do
@@ -78,19 +78,19 @@ return {
                 end
             end
 
-            require("lspconfig").clangd.setup({
-                cmd = {
-                    "docker",
-                    "exec",
-                    "-i",
-                    "rocky",
-                    "clangd",
-                    "--background-index",
-                    "--clang-tidy",
-                },
-                capabilities = capabilities,
-                on_attach = on_attach,
-            })
+            -- require("lspconfig").clangd.setup({
+            --     cmd = {
+            --         "docker",
+            --         "exec",
+            --         "-i",
+            --         "rocky",
+            --         "clangd",
+            --         "--background-index",
+            --         "--clang-tidy",
+            --     },
+            --     capabilities = capabilities,
+            --     on_attach = on_attach,
+            -- })
 
 
             require("mason").setup()
