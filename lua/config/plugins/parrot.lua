@@ -42,7 +42,9 @@ return {
                         return payload
                     end,
                 },
-            }
+            },
+            -- Option to move the cursor to the end of the file after finished respond
+            chat_free_cursor = true,
         }
     end,
 }
