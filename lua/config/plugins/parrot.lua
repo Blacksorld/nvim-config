@@ -11,7 +11,7 @@ return {
                     model_endpoint = "https://api.anthropic.com/v1/models",
                     api_key = utils.get_api_key("api/claude", "CLAUDE_API_KEY"),
                     params = {
-                        chat = { max_tokens = 4096 },
+                        chat = { max_tokens = 16384 },
                         command = { max_tokens = 4096 },
                     },
                     topic = {
