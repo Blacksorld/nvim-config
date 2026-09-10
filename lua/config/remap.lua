@@ -30,9 +30,8 @@ vim.keymap.set("n", "<leader>Y", [["Y]])
 vim.keymap.set({ "n", "v" }, "<leader>d", "\"_d")
 
 -- Quickfix navigation
--- conflicts with buffer navigation
--- vim.keymap.set("n", "<C-k>", "<cmd>cnext<CR>zz")
--- vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz")
+vim.keymap.set("n", "<C-n>", "<cmd>cnext<CR>zz")
+vim.keymap.set("n", "<C-p>", "<cmd>cprev<CR>zz")
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
 vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 
@@ -41,3 +40,5 @@ vim.keymap.set('n', '<leader>x', ':bdelete<CR>', { desc = 'Close Buffer' })
 
 vim.api.nvim_set_keymap('i', '<C-a>', '<C-o>0', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-e>', '<C-o>$', { noremap = true, silent = true })
+
+vim.keymap.set("n", "<leader>yf", ":let @+ = expand('%')<cr>", { desc = "Copy current buffer filepath" })
