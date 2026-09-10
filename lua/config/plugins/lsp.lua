@@ -68,6 +68,10 @@ return {
             },
         })
 
+        vim.lsp.config('pylsp', {
+            root_markers = { '.git' },
+        })
+
         -- Enable servers
         vim.lsp.enable({ "lua_ls", "gopls", "pylsp", "dockerls", "clangd" })
 
