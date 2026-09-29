@@ -72,8 +72,34 @@ return {
             root_markers = { '.git' },
         })
 
+        local ra_wrapper = 'scripts/rust-analyzer-container.sh'
+        vim.lsp.config('rust_analyzer', {
+            cmd = function(dispatchers, config)
+                return vim.lsp.rpc.start({ config.root_dir .. '/' .. ra_wrapper }, dispatchers)
+            end,
+            root_dir = function(bufnr, on_dir)
+                local root = vim.fs.root(bufnr, { '.git' })
+                if root and vim.uv.fs_stat(root .. '/' .. ra_wrapper) then
+                    on_dir(root)
+                end
+            end,
+            settings = {
+                ['rust-analyzer'] = {
+                    -- Own target dir (target/rust-analyzer): cargo fingerprints embed
+                    -- absolute paths and cargo locks the target dir, so sharing target/
+                    -- with `make` builds from /workspace would thrash and block.
+                    cargo = { targetDir = true },
+                    check = { command = 'clippy' },
+                    -- cachePriming = { enable = false },
+                    files = {
+                        excludeDirs = { 'target', 'target-v2', '.venv', 'python/.venv' },
+                    },
+                },
+            },
+        })
+
         -- Enable servers
-        vim.lsp.enable({ "lua_ls", "gopls", "pylsp", "dockerls", "clangd" })
+        vim.lsp.enable({ "lua_ls", "gopls", "pylsp", "dockerls", "clangd", "rust_analyzer" })
 
         -- Mason
         require("mason").setup()
