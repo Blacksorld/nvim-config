@@ -42,6 +42,79 @@ return {
             end,
         })
 
+        -- Spinner for slow user-initiated requests. rust-analyzer reports no progress for
+        -- on-demand analysis (e.g. the first gd into a crate with cachePriming off), so
+        -- without this a slow lookup looks like nothing happened.
+        local slow_methods = {
+            ['textDocument/definition'] = 'definition',
+            ['textDocument/declaration'] = 'declaration',
+            ['textDocument/typeDefinition'] = 'type definition',
+            ['textDocument/implementation'] = 'implementation',
+            ['textDocument/references'] = 'references',
+            ['textDocument/hover'] = 'hover',
+            ['textDocument/rename'] = 'rename',
+            ['textDocument/codeAction'] = 'code action',
+        }
+        local pending = {}
+        vim.api.nvim_create_autocmd('LspRequest', {
+            callback = function(ev)
+                local req = ev.data.request
+                local title = slow_methods[req.method]
+                if not title then
+                    return
+                end
+                local key = ev.data.client_id .. ':' .. ev.data.request_id
+                if req.type == 'pending' then
+                    local entry = {
+                        timer = vim.uv.new_timer(),
+                        client_id = ev.data.client_id,
+                        request_id = ev.data.request_id,
+                    }
+                    pending[key] = entry
+                    entry.timer:start(500, 0, vim.schedule_wrap(function()
+                        if pending[key] ~= entry then
+                            return -- answered within 500ms
+                        end
+                        local client = vim.lsp.get_client_by_id(ev.data.client_id)
+                        entry.handle = require('fidget.progress').handle.create({
+                            title = title,
+                            message = 'waiting for server',
+                            lsp_client = { name = client and client.name or 'lsp' },
+                        })
+                    end))
+                    return
+                end
+                local entry = pending[key]
+                if not entry then
+                    return
+                end
+                pending[key] = nil
+                entry.timer:stop()
+                entry.timer:close()
+                if entry.handle then
+                    if req.type == 'cancel' then
+                        entry.handle:cancel()
+                    else
+                        entry.handle:finish()
+                    end
+                end
+            end,
+        })
+
+        -- Cancel every pending lookup above. The server acknowledges the cancel and Neovim
+        -- drops the callback, so the late jump never happens, unless the answer was already
+        -- in flight.
+        vim.keymap.set("n", "<leader>lc", function()
+            local entries = vim.tbl_values(pending)
+            for _, entry in ipairs(entries) do
+                local client = vim.lsp.get_client_by_id(entry.client_id)
+                if client then
+                    client:cancel_request(entry.request_id) -- fires LspRequest 'cancel'
+                end
+            end
+            vim.notify(('Cancelled %d pending LSP request(s)'):format(#entries))
+        end, { desc = "Cancel pending LSP lookups" })
+
         -- Shared config for all servers
         vim.lsp.config('*', {
             capabilities = capabilities,
@@ -90,9 +163,9 @@ return {
                     -- with `make` builds from /workspace would thrash and block.
                     cargo = { targetDir = true },
                     check = { command = 'clippy' },
-                    -- cachePriming = { enable = false },
+                    cachePriming = { enable = false },
                     files = {
-                        excludeDirs = { 'target', 'target-v2', '.venv', 'python/.venv' },
+                        exclude = { 'target', 'target-v2', '.venv', 'python/.venv' },
                     },
                 },
             },
